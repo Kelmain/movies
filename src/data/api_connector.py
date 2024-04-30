@@ -6,18 +6,8 @@ import asyncio
 import aiohttp
 from dotenv import load_dotenv
 
-# getting the name of the directory
-# where the this file is present.
-current = os.path.dirname(os.path.realpath(__file__))
 
-# Getting the parent directory name
-# where the current directory is present.
-parent = os.path.dirname(current)
-
-# adding the parent directory to
-# the sys.path.
-sys.path.append(parent)
-from movies.sql.schema import insert_data
+from make_dataset import insert_data
 
 # * important
 # ? question
@@ -90,7 +80,8 @@ async def fetch_page(session, page_count: int) -> dict:
 async def get_movie_ids(session) -> list:
 
     answer = await fetch_page(session, 1)
-    total_pages = answer.get("total_pages", 1)
+    #total_pages = answer.get("total_pages", 1)
+    total_pages = 2
     tasks = [
         fetch_page(session, page_count) for page_count in range(2, total_pages + 1)
     ]
@@ -131,7 +122,6 @@ async def main():
         datas = await asyncio.gather(*tasks)
         insert_data(datas)
     print(len(datas))
-    print(datas[0])
 
 
 asyncio.run(main())

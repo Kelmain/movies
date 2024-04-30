@@ -68,3 +68,4 @@ $RECYCLE.BIN/
 *.lnk
 
 #manuel add
+__pycache__

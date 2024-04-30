@@ -2,7 +2,7 @@ import duckdb
 
 
 TABLE_NAME = "movies"
-DB_NAME = "movies.db
+DB_NAME = "movies.db"
 
 # ['backdrop_path', 'genres[list of names]', 'id','imdb_id', 'original_title', 'overview','popularity',
 #  'poster_path', 'release_date', 'runtime', 'status', 'tagline', 'title','vote_average', 'vote_count',
@@ -21,27 +21,18 @@ def insert_data(
     try:
         for item in data:
             genre_name = [genre.get("name") for genre in item.get("genres", [])]
-            actors = [
-                actor.get("name")
-                for actor in item.get("credits", {}).get("cast", [])
-                if actor.get("known_for_department") == "Acting"
-            ]
-            actors_id = [
-                actor.get("id")
-                for actor in item.get("credits", {}).get("cast", [])
-                if actor.get("known_for_department") == "Acting"
-            ]
-            directors = [
-                director.get("name")
-                for director in item.get("credits", {}).get("crew", [])
-                if director.get("known_for_department") == "Directing"
-            ]
-            directors_id = [
-                director.get("id")
-                for director in item.get("credits", {}).get("crew", [])
-                if director.get("known_for_department") == "Directing"
-            ]
-            keywords = [keyword.get("keywords") for keyword in item.get("keywords", [])]
+            actors = [actor.get("name") for actor in item.get("credits", {}).get("cast", [])
+                        if actor.get("known_for_department") == "Acting"]
+            actors_id = [actor.get("id") for actor in item.get("credits", {}).get("cast", [])
+                    if actor.get("known_for_department") == "Acting"]
+            directors = [director.get("name") for director in item.get("credits", {}).get("cast", [])
+                    if director.get("known_for_department") == "Directing"]
+            directors_id = [director.get("id") for director in item.get("credits", {}).get("cast", [])
+                    if director.get("known_for_department") == "Directing"]
+            keywords = [keyword.get("name") for keyword in item.get("keywords", {}).get("keywords", [])]
+            video_name = [video.get("name") for video in item.get("videos", {}).get("results", [])]
+            video_key = [video.get("key") for video in item.get("videos", {}).get("results", [])]
+            
 
             values = (
                 item.get("backdrop_path"),
@@ -49,7 +40,7 @@ def insert_data(
                 item.get("imdb_id"),
                 item.get("original_title"),
                 item.get("overview"),
-                item.get("popularity"),
+                round(item.get("popularity"),2),
                 item.get("poster_path"),
                 item.get("release_date"),
                 item.get("runtime"),
@@ -63,19 +54,26 @@ def insert_data(
                 actors_id,
                 directors,
                 directors_id,
-                item.get("video_name"),
-                item.get("video_key"),
+                video_name,
+                video_key,
                 keywords,
             )
 
             cur.execute(
-                f"INSERT INTO {table_name} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                f"INSERT INTO {table_name} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 values,
             )
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"insert db: {e}")
 
     con.commit()
     cur.close()
     con.close()
+
+def test_data()-> None:
+    with duckdb.connect(DB_NAME) as con:
+        con.table(TABLE_NAME).show()
+
+if __name__ == "__main__":
+    test_data()
