@@ -1,10 +1,23 @@
 import os
 import sys
 import json
-import aiohttp
-import asyncio
-from dotenv import load_dotenv
 from datetime import datetime, timedelta
+import asyncio
+import aiohttp
+from dotenv import load_dotenv
+
+# getting the name of the directory
+# where the this file is present.
+current = os.path.dirname(os.path.realpath(__file__))
+
+# Getting the parent directory name
+# where the current directory is present.
+parent = os.path.dirname(current)
+
+# adding the parent directory to
+# the sys.path.
+sys.path.append(parent)
+from movies.sql.schema import insert_data
 
 # * important
 # ? question
@@ -61,7 +74,9 @@ async def fetch_page(session, page_count: int) -> dict:
     }
     # **important** get movies page by page
     try:
-        async with session.get(URL_DISCOVER_MOVIE, params=params, headers=HEADERS) as response:
+        async with session.get(
+            URL_DISCOVER_MOVIE, params=params, headers=HEADERS
+        ) as response:
             if response.status != 200:
                 print(f"Error: {response.status}")
                 return {}
@@ -90,35 +105,39 @@ async def get_movie_ids(session) -> list:
     return list(movies_id)
 
 
-
 async def get_movie_data(session, movie_id: int) -> dict:
 
-    params = { "language": LANGUAGE,
-               "append_to_response": "credits,videos,keywords"}
+    params = {"language": LANGUAGE, "append_to_response": "credits,videos,keywords"}
 
-    url =f"{URL_DETAILS_MOVIE}{movie_id}"
+    url = f"{URL_DETAILS_MOVIE}{movie_id}"
 
     try:
         async with session.get(url, headers=HEADERS, params=params) as response:
             if response.status == 429:
                 await asyncio.sleep(10)
-               
+
             data = response.json()
-            return  await data
+            return await data
 
     except aiohttp.ClientError as e:
         print(f"Error: {e}")
         return {}
+
 
 async def main():
     async with aiohttp.ClientSession() as session:
         movie_ids = await get_movie_ids(session)
         tasks = [get_movie_data(session, movie_id) for movie_id in movie_ids]
         datas = await asyncio.gather(*tasks)
-    
+        insert_data(datas)
     print(len(datas))
     print(datas[0])
 
 
 asyncio.run(main())
 
+# ['backdrop_path', 'genres[list of names]', 'id','imdb_id', 'original_title', 'overview','popularity',
+#  'poster_path', 'release_date', 'runtime', 'status', 'tagline', 'title','vote_average', 'vote_count',
+#  'cast[list of names based on credits{cast[name]}] get actor by known_for_department',cast_id[],
+# directors[list of names based on credits{crew[name]}] get director by known_for_department', direction_id[],
+# 'video_name', 'video_key', 'keywords'[list of keywords[keywords]]]
