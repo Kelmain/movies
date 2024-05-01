@@ -80,8 +80,8 @@ async def fetch_page(session, page_count: int) -> dict:
 async def get_movie_ids(session) -> list:
 
     answer = await fetch_page(session, 1)
-    #total_pages = answer.get("total_pages", 1)
-    total_pages = 2
+    total_pages = answer.get("total_pages", 1)
+    #total_pages = 2
     tasks = [
         fetch_page(session, page_count) for page_count in range(2, total_pages + 1)
     ]
