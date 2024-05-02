@@ -1,9 +1,9 @@
 [theme]
-primaryColor="#F63366"
+base="dark"
 backgroundColor="#293745"
-secondaryBackgroundColor="#F0F2F6"
-textColor="white"
-# font="Sans-Serif,monospace"
+secondaryBackgroundColor="#07204e"
+font="serif"
+
 
 [logger]
 # Level of logging: 'error', 'warning', 'info', or 'debug'.
