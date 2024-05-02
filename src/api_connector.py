@@ -124,13 +124,8 @@ async def main():
         datas = await asyncio.gather(*tasks)
         insert_data(datas)
     print(len(datas))
-    
+ 
 
 
 asyncio.run(main())
 
-# ['backdrop_path', 'genres[list of names]', 'id','imdb_id', 'original_title', 'overview','popularity',
-#  'poster_path', 'release_date', 'runtime', 'status', 'tagline', 'title','vote_average', 'vote_count',
-#  'cast[list of names based on credits{cast[name]}] get actor by known_for_department',cast_id[],
-# directors[list of names based on credits{crew[name]}] get director by known_for_department', direction_id[],
-# 'video_name', 'video_key', 'keywords'[list of keywords[keywords]]]

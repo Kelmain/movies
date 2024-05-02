@@ -42,6 +42,7 @@ class MovieData:
         self.directors, self.directors_id = self.extract_directors(item, "crew", "Directing")
         self.video_name, self.video_key = self.extract_videos(item)
         self.keywords = [keyword.get("name") for keyword in item.get("keywords", {}).get("keywords", ['Unknown'])]
+        self.production_company = [company.get("name") for company in item.get("production_companies", ['Unknown'])]
 
     @staticmethod
     def extract_people(item, role_type:str, department:str, max_people:int = None)->tuple:
@@ -80,10 +81,10 @@ def insert_data(data: list, db_name: str = DB_NAME, table_name: str = TABLE_NAME
                 movie_data.runtime, movie_data.status, movie_data.tagline, movie_data.title, movie_data.vote_average,
                 movie_data.vote_count, movie_data.genre_name, movie_data.actors, movie_data.actors_id,
                 movie_data.directors, movie_data.directors_id, movie_data.video_name, movie_data.video_key,
-                movie_data.keywords,
+                movie_data.keywords,movie_data.production_company,
             )
             cur.execute(
-                f"INSERT INTO {table_name} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                f"INSERT INTO {table_name} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 values,
             )
     except duckdb.Error as db_err:

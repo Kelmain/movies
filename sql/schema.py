@@ -3,7 +3,7 @@ import duckdb
 
 
 TABLE_NAME = "movies"
-SCHEMA = "backdrop_path VARCHAR(255),id INT PRIMARY KEY,imdb_id VARCHAR(255),original_title VARCHAR(255),overview TEXT,popularity DECIMAL(10,2),poster_path VARCHAR(255),release_date DATE,runtime INT,status VARCHAR(255),tagline VARCHAR(255),title VARCHAR(255),vote_average DECIMAL(3,2),vote_count INT,genres VARCHAR(255),actors VARCHAR(255),actors_id VARCHAR(255),directors VARCHAR(255), directors_id VARCHAR(255),video_name VARCHAR(255),video_key VARCHAR(255),keywords VARCHAR(255)"
+SCHEMA = "backdrop_path VARCHAR(255),id INT PRIMARY KEY,imdb_id VARCHAR(255),original_title VARCHAR(255),overview TEXT,popularity DECIMAL(10,2),poster_path VARCHAR(255),release_date DATE,runtime INT,status VARCHAR(255),tagline VARCHAR(255),title VARCHAR(255),vote_average DECIMAL(3,2),vote_count INT,genres VARCHAR(255),actors VARCHAR(255),actors_id VARCHAR(255),directors VARCHAR(255), directors_id VARCHAR(255),video_name VARCHAR(255),video_key VARCHAR(255),keywords VARCHAR(255),production_company VARCHAR(255)"
 DB_NAME = "movies.db"
 
 
@@ -57,63 +57,3 @@ if __name__ == "__main__":
     #create_db(DB_NAME)
     create_table(DB_NAME, TABLE_NAME, SCHEMA)
     #drop_table(DB_NAME, TABLE_NAME)
-
-"""
-Maybe i will try this later...
-CREATE TABLE Movies (
-    backdrop_path VARCHAR(255),
-    id INT PRIMARY KEY,
-    imdb_id VARCHAR(255),
-    original_title VARCHAR(255),
-    overview TEXT,
-    popularity DECIMAL(5,2),
-    poster_path VARCHAR(255),
-    release_date DATE,
-    runtime INT,
-    status VARCHAR(255),
-    tagline VARCHAR(255),
-    title VARCHAR(255),
-    vote_average DECIMAL(3,2),
-    vote_count INT
-);
-
-CREATE TABLE Genres (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    movie_id INT,
-    genre_name VARCHAR(255),
-    FOREIGN KEY (movie_id) REFERENCES Movies(id)
-);
-
-CREATE TABLE Cast (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    movie_id INT,
-    actor_name VARCHAR(255),
-    known_for_department VARCHAR(255),
-    cast_id INT,
-    FOREIGN KEY (movie_id) REFERENCES Movies(id)
-);
-
-CREATE TABLE Directors (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    movie_id INT,
-    director_name VARCHAR(255),
-    known_for_department VARCHAR(255),
-    direction_id INT,
-    FOREIGN KEY (movie_id) REFERENCES Movies(id)
-);
-
-CREATE TABLE Videos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    movie_id INT,
-    video_name VARCHAR(255),
-    video_key VARCHAR(255),
-    FOREIGN KEY (movie_id) REFERENCES Movies(id)
-);
-
-CREATE TABLE Keywords (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    movie_id INT,
-    keyword VARCHAR(255),
-    FOREIGN KEY (movie_id) REFERENCES Movies(id)
-);
-"""
