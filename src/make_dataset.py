@@ -38,7 +38,7 @@ class MovieData:
         self.vote_average = item.get("vote_average")
         self.vote_count = item.get("vote_count")
         self.genre_name = [genre.get("name") for genre in item.get("genres", ['Unknown'])]
-        self.actors, self.actors_id = self.extract_people(item, "cast", "Acting", 5)
+        self.actors, self.actors_id = self.extract_people(item, "cast", "Acting", 2)
         self.directors, self.directors_id = self.extract_directors(item, "crew", "Directing")
         self.video_name, self.video_key = self.extract_videos(item)
         self.keywords = [keyword.get("name") for keyword in item.get("keywords", {}).get("keywords", ['Unknown'])]

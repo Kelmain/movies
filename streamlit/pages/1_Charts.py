@@ -23,7 +23,7 @@ st.markdown(
 
 st.title(":bar_chart: Charts")
 
-
+@st.cache_data
 def load_data():
     data = pd.read_parquet("data/movies.parquet")
     return data
@@ -40,7 +40,7 @@ movies2 = df[
         "actors",
         "directors",
         "keywords",
-        "imbd_score",
+        "imdb_score",
         "vote_average",
         "vote_count",
     ]
@@ -116,7 +116,7 @@ with col3:
         filtered_movies.explode("directors")["directors"]
         .value_counts()[:10]
         .sort_values(ascending=True)
-        .plot.barh(width=0.9, color=sns.color_palette("muted", 40))
+        .plot.barh(width=0.9, color=sns.color_palette("hls", 40))
     )
     for i, v in enumerate(
         filtered_movies.explode("directors")["directors"]
@@ -131,7 +131,7 @@ with col3:
 
 with col4:
     st.subheader("Keywords")
-    plt.subplots(figsize=(12, 12))
+    plt.subplots(figsize=(14, 12))
     words = movies2["keywords"].dropna().apply(nltk.word_tokenize)
     word = []
     for i in words:
@@ -140,7 +140,7 @@ with col4:
     word = [i for i in word.str.lower() if i not in stop_words]
     wc = WordCloud(
         background_color="black",
-        max_words=2000,
+        max_words=1000,
         stopwords=stop_words,
         max_font_size=60,
         width=1000,
