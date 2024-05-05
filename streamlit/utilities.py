@@ -90,10 +90,8 @@ def read_db() -> pd.DataFrame:
     return df
 
 
-
-
 def creatre_df() -> pd.DataFrame:
-    #print("Current working directory:", os.getcwd())  # This will show the directory from which the script is run
+    # print("Current working directory:", os.getcwd())  # This will show the directory from which the script is run
 
     df = read_db()
     df = create_mixed_column(df)
@@ -105,29 +103,95 @@ def creatre_df() -> pd.DataFrame:
     return df
 
 
-# Function that takes in movie title as input and outputs most similar movies
-def get_recommendations(
-    df: pd.DataFrame, title: str, cosine_sim: pd.DataFrame
-) -> pd.DataFrame:
+def create_tifidf(df):
+    print("Creating TF-IDF matrix")
+    tfidf = TfidfVectorizer(stop_words=list(stop_words), lowercase=True)
+    tfidf_matrix = tfidf.fit_transform(df["description"])
+    tifidf_df = pd.DataFrame(
+        tfidf_matrix.toarray(), columns=tfidf.get_feature_names_out()
+    )
+    print("TF-IDF matrix created")
+    return tifidf_df
 
-    idx = df.index[df["title"] == title][0]
-    # Get the pairwsie similarity scores of all movies with that movie
+
+def create_count(df):
+    print("Creating count matrix")
+    count_vectorizer = CountVectorizer(stop_words=list(stop_words), lowercase=True)
+    count_matrix = count_vectorizer.fit_transform(df["mixed"])
+    count_df = pd.DataFrame(
+        count_matrix.toarray(), columns=count_vectorizer.get_feature_names_out()
+    )
+    print("Count matrix created")
+    return count_df
+
+
+def create_standard_scaler(df):
+    print("Creating standard scaler")
+    scaler = StandardScaler()
+    numerical_columns = ["imdb_score", "vote_average"]
+    numerical_features = scaler.fit_transform(df[numerical_columns])
+    scaled_df = pd.DataFrame(numerical_features, columns=numerical_columns)
+    print("Standard scaler created")
+    return scaled_df
+
+
+
+
+import pandas as pd
+import os
+
+def create_cosinus_df(df):
+   
+    try:
+        
+        tfidf_df = create_tifidf(df)
+        count_df = create_count(df)
+        scaled_df = create_standard_scaler(df)
+        if tfidf_df.shape[0] == count_df.shape[0] == scaled_df.shape[0]:
+            final_features = pd.concat([tfidf_df, count_df, scaled_df], axis=1)
+            cosine_matrix = cosine_similarity(final_features, final_features)
+            return cosine_matrix
+        else:
+            print("Error: DataFrames do not have the same number of rows")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+
+
+
+def get_recommendations(
+    df: pd.DataFrame, id: int, cosine_sim: np.ndarray) -> list:
+    """
+    Get recommendations based on a movie ID and a precomputed cosine similarity matrix.
+
+    Args:
+    df (pd.DataFrame): DataFrame containing movie data.
+    id (int): The ID of the movie for which recommendations are sought.
+    cosine_sim (np.ndarray): Precomputed cosine similarity matrix.
+
+    Returns:
+    list: A list of dictionaries, each containing all the information of the top 10 most similar movies.
+    """
+    # Get the index of the movie that matches the ID
+    idx = df.index[df["id"] == id][0]
+
+    # Get the pairwise similarity scores of all movies with that movie
     sim_scores = list(enumerate(cosine_sim[idx]))
 
     # Sort the movies based on the similarity scores
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
 
     # Get the scores of the 10 most similar movies
-    sim_scores = sim_scores[1:11]
+    sim_scores = sim_scores[1:11]  # Exclude the first item since it's the movie itself
 
     # Get the movie indices
     movie_indices = [i[0] for i in sim_scores]
 
-    # Return the top 10 most similar movies
-    # return df['title'].iloc[movie_indices],df['id'].iloc[movie_indices]
-    return df["id"].iloc[movie_indices]
-
+    # Return the list of dictionaries for the top 10 most similar movies
+    return df.iloc[movie_indices].to_dict(orient="records")
 
 
 if __name__ == "__main__":
-   creatre_df()
+    # creatre_df()
+    create_cosinus_df()

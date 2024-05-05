@@ -2,9 +2,12 @@ import os
 import sys
 import warnings
 import pandas as pd
+from utilities import get_recommendations,create_cosinus_df
+from streamlit_searchbox import st_searchbox
+from sklearn.metrics.pairwise import cosine_similarity
 import streamlit as st
 
-from streamlit_searchbox import st_searchbox
+
 
 warnings.filterwarnings("ignore")
 
@@ -18,16 +21,20 @@ st.markdown(
 )
 st.title(":film_projector: Movie recommandation")
 
-
+@st.cache_data
 def load_data():
     data = pd.read_parquet("data/movies.parquet")
-    return data
+    cosine = create_cosinus_df(data)
+    cosine_matrix = cosine_similarity(cosine, cosine)
+    return data, cosine_matrix
 
 
 # Create a text element and let the reader know the data is loading.
 data_load_state = st.text("Loading data...")
 
-df = load_data()
+df, cosine_matrix = load_data()
+#cosine_sim = load_cosinus()
+
 # Notify the reader that the data was successfully loaded.
 data_load_state.text("Loading data...done!")
 
@@ -82,3 +89,7 @@ with st.container():
             st.subheader("No movie selected or movie not found")
     else:
         st.subheader("No movie selected or movie not found")
+
+with st.container():
+    if selected_movie_title:
+        st.write(get_recommendations(df, selected_movie_id, cosine_matrix))
