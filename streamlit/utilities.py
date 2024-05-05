@@ -193,5 +193,5 @@ def get_recommendations(
 
 
 if __name__ == "__main__":
-    # creatre_df()
-    create_cosinus_df()
+    creatre_df()
+   
