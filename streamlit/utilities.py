@@ -3,7 +3,6 @@ import duckdb
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import warnings
 from functools import cache
 from sklearn.pipeline import Pipeline
 from sklearn.neighbors import NearestNeighbors
@@ -13,10 +12,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import nltk
+from dotenv import load_dotenv
 
-nltk.data.path.append(
-    r"c:\Users\Work\Desktop\projects\project2\project2-movie-env\Lib\site-packages\nltk"
-)
+# Load the .env file
+load_dotenv()
+nltk.data.path.append(os.getenv("NLTK_PATH"))
 from nltk.corpus import stopwords
 
 # nltk.download('stopwords')
@@ -24,6 +24,8 @@ from nltk.corpus import stopwords
 stop_words = set(stopwords.words("french"))
 stop_words.update(",", ";", "!", "?", ".", "(", ")", "$", "#", "+", ":", "...", " ", "")
 
+TABLE_NAME = os.getenv("TABLE_NAME")
+DB_NAME = os.getenv("DB_NAME")
 
 
 def weighted_rating(df: pd.DataFrame, m: int, c: float) -> float:
@@ -146,8 +148,8 @@ def read_db() -> pd.DataFrame:
     Returns:
     pd.DataFrame: A DataFrame containing the data from the database.
     """
-    con = duckdb.connect("movies.db")
-    df = con.table("movies").df()
+    con = duckdb.connect(DB_NAME)
+    df = con.table(TABLE_NAME).df()
     con.close()
     return df
 

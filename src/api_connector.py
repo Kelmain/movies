@@ -21,10 +21,10 @@ load_dotenv()
 
 # Get environment variables
 API_TOKEN = os.getenv("BEARER_TOKEN")
-URL_DISCOVER_MOVIE = "https://api.themoviedb.org/3/discover/movie"
-URL_DETAILS_MOVIE = "https://api.themoviedb.org/3/movie/"
+URL_DISCOVER_MOVIE = os.getenv("URL_DISCOVER_MOVIE")
+URL_DETAILS_MOVIE = os.getenv("URL_DETAILS_MOVIE")
 HEADERS = {"accept": "application/json", "Authorization": API_TOKEN}
-LANGUAGE = "fr-FR"
+LANGUAGE = os.getenv("LANGUAGE")
 
 async def fetch_page(session, page_count: int) -> dict:
     """

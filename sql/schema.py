@@ -1,10 +1,14 @@
+import os
 import duckdb
+from dotenv import load_dotenv
 
+# Load the .env file
+load_dotenv()
 
-
-TABLE_NAME = "movies"
+TABLE_NAME = os.getenv("TABLE_NAME")
+DB_NAME = os.getenv("DB_NAME")
 SCHEMA = "backdrop_path VARCHAR(255),id INT PRIMARY KEY,imdb_id VARCHAR(255),original_title VARCHAR(255),overview TEXT,popularity DECIMAL(10,2),poster_path VARCHAR(255),release_date DATE,runtime INT,status VARCHAR(255),tagline VARCHAR(255),title VARCHAR(255),vote_average DECIMAL(3,2),vote_count INT,genres VARCHAR(255),actors VARCHAR(255),actors_id VARCHAR(255),directors VARCHAR(255), directors_id VARCHAR(255),video_name VARCHAR(255),video_key VARCHAR(255),keywords VARCHAR(255),production_company VARCHAR(255)"
-DB_NAME = "movies.db"
+
 
 
 def create_db(db_name: str) -> None:

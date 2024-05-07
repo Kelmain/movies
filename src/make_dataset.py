@@ -1,8 +1,12 @@
+import os
 import duckdb
+from dotenv import load_dotenv
 
+# Load the .env file
+load_dotenv()
 
-TABLE_NAME = "movies"
-DB_NAME = "movies.db"
+TABLE_NAME = os.getenv("TABLE_NAME")
+DB_NAME = os.getenv("DB_NAME")
 
 
 class MovieData:
