@@ -41,8 +41,8 @@ class MovieData:
         self.actors, self.actors_id = self.extract_people(item, "cast", "Acting", 2)
         self.directors, self.directors_id = self.extract_directors(item, "crew", "Directing")
         self.video_name, self.video_key = self.extract_videos(item)
-        self.keywords = [keyword.get("name") for keyword in item.get("keywords", {}).get("keywords", ['Unknown'])]
-        self.production_company = [company.get("name") for company in item.get("production_companies", ['Unknown'])]
+        self.keywords = [keyword.get("name") for keyword in item.get("keywords", {}).get("keywords", ['Unknown'])[:3]]
+        self.production_company = [company.get("name") for company in item.get("production_companies", ['Unknown'][:1])]
 
     @staticmethod
     def extract_people(item, role_type:str, department:str, max_people:int = None)->tuple:

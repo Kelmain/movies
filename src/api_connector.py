@@ -62,7 +62,7 @@ async def fetch_page(session, page_count: int) -> dict:
         "vote_count.gte": 150,
         "with_runtime.gte": 80,
         "with_runtime.lte": 240,
-        "without_genres": "Documentary",
+        "without_genres": "Documentaire",
     }
     # **important** get movies page by page
     try:
