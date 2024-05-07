@@ -4,24 +4,11 @@ import duckdb
 TABLE_NAME = "movies"
 DB_NAME = "movies.db"
 
-# ['backdrop_path', 'genres[list of names]', 'id','imdb_id', 'original_title', 'overview','popularity',
-#  'poster_path', 'release_date', 'runtime', 'status', 'tagline', 'title','vote_average', 'vote_count',
-#  'cast[list of names based on credits{cast[name]}] get actor by known_for_department',cast_id[],
-# directors[list of names based on credits{crew[name]}] get director by known_for_department', direction_id[],
-# 'video_name', 'video_key', 'keywords'[list of keywords[keywords]]]
-# "backdrop_path VARCHAR(255),id INT PRIMARY KEY,imdb_id VARCHAR(255),original_title VARCHAR(255),overview TEXT,popularity DECIMAL(5,2),
-# poster_path VARCHAR(255),release_date DATE,runtime INT,status VARCHAR(255),tagline VARCHAR(255),title VARCHAR(255),vote_average DECIMAL(3,2),
-# vote_count INT,genres VARCHAR(255),actors VARCHAR(255),actors_id INT,directors VARCHAR(255), directors_id INT,video_name VARCHAR(255),
-# video_key VARCHAR(255),keywords VARCHAR(255)"
-
-
-def test_data()-> None:
-    with duckdb.connect(DB_NAME) as con:
-        con.table(TABLE_NAME).show()
-
-
 
 class MovieData:
+    """
+    Class for handling the transformation of movie data items into structured format suitable for database insertion.
+    """
     def __init__(self, item):
         self.backdrop_path = item.get("backdrop_path")
         self.id = item.get("id")
@@ -46,6 +33,9 @@ class MovieData:
 
     @staticmethod
     def extract_people(item, role_type:str, department:str, max_people:int = None)->tuple:
+        """
+        Extract people from the item.
+        """
         people = [(person.get("name"), person.get("id")) for person in item.get("credits", {}).get(role_type, ['Unknown'])
                   if person.get("known_for_department") == department and (max_people is None or person.get('order') <= max_people)]
         names, ids = zip(*people) if people else (['Unknown'], ['Unknown'])
@@ -53,6 +43,9 @@ class MovieData:
     
     @staticmethod
     def extract_directors(item, role_type:str, department:str,job: str = "Director")->tuple:
+        """
+        Extract directors from the item.
+        """
         people = [(person.get("name"), person.get("id")) for person in item.get("credits", {}).get(role_type, ['Unknown'])
                   if person.get("known_for_department") == department and person.get('job') ==job]
         names, ids = zip(*people) if people else (['Unknown'], ['Unknown'])
@@ -60,12 +53,23 @@ class MovieData:
 
     @staticmethod
     def extract_videos(item)->tuple:
+        """
+        Extract videos from the item.
+        """
         videos = item.get("videos", {}).get("results", ['Unknown'])
         names = [video.get("name") for video in videos]
         keys = [video.get("key") for video in videos]
         return names, keys
 
 def insert_data(data: list, db_name: str = DB_NAME, table_name: str = TABLE_NAME) -> None:
+    """
+    Inserts a list of movie data into the specified database and table.
+
+    Args:
+    data (list): A list of dictionaries, each representing movie data.
+    db_name (str): The name of the database to connect to.
+    table_name (str): The name of the table where data will be inserted.
+    """
     con = duckdb.connect(db_name)
     cur = con.cursor()
     try:

@@ -140,6 +140,15 @@ else:
     st.subheader("No movie selected or movie not found")
 
 def add_parameter_ui(classifier_name):
+    """
+    Add a selectbox to the sidebar to select the metric for the KNN model.
+
+    Args:
+    classifier_name (str): The name of the classifier.
+
+    Returns:
+    dict: A dictionary with the metric selected by the user.
+    """
     params = dict()
     if classifier_name == 'KNN':
         metric = st.sidebar.selectbox('Select metric', ('minkowski','cosine', 'euclidean', 'manhattan', 'l1', 'l2', 'cityblock'))

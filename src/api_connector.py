@@ -26,12 +26,6 @@ URL_DETAILS_MOVIE = "https://api.themoviedb.org/3/movie/"
 HEADERS = {"accept": "application/json", "Authorization": API_TOKEN}
 LANGUAGE = "fr-FR"
 
-
-def jprint(obj):
-    text = json.dumps(obj, sort_keys=True, indent=4)
-    print(text)
-
-
 async def fetch_page(session, page_count: int) -> dict:
     """
     Fetches movie data for the specified page.
@@ -80,7 +74,15 @@ async def fetch_page(session, page_count: int) -> dict:
 
 @cache
 async def get_movie_ids(session) -> list:
+    """
+    Fetches movie IDs for the specified page.
 
+    Parameters:
+    - session (aiohttp.ClientSession): An asynchronous HTTP client session.
+
+    Returns:
+    - list: A list of movie IDs.
+    """
     answer = await fetch_page(session, 1)
     total_pages = answer.get("total_pages", 1)
     #total_pages = 2
@@ -99,7 +101,19 @@ async def get_movie_ids(session) -> list:
 
 @cache
 async def get_movie_data(session, movie_id: int) -> dict:
+    """
+    Fetches detailed movie data including credits, videos, and keywords for a given movie ID.
 
+    Parameters:
+    - session (aiohttp.ClientSession): An asynchronous HTTP client session.
+    - movie_id (int): The unique identifier for the movie.
+
+    Returns:
+    - dict: A dictionary containing detailed movie data.
+
+    Raises:
+    - aiohttp.ClientError: If an error occurs during the HTTP request.
+    """
     params = {"language": LANGUAGE, "append_to_response": "credits,videos,keywords"}
 
     url = f"{URL_DETAILS_MOVIE}{movie_id}"
@@ -118,14 +132,16 @@ async def get_movie_data(session, movie_id: int) -> dict:
 
 
 async def main():
+    """
+    Main function to fetch movie IDs and their detailed data, then insert the data into a dataset.
+    """
     async with aiohttp.ClientSession() as session:
         movie_ids = await get_movie_ids(session)
         tasks = [get_movie_data(session, movie_id) for movie_id in movie_ids]
         datas = await asyncio.gather(*tasks)
         insert_data(datas)
     print(len(datas))
- 
+
 
 
 asyncio.run(main())
-
