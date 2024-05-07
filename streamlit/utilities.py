@@ -25,13 +25,19 @@ stop_words = set(stopwords.words("french"))
 stop_words.update(",", ";", "!", "?", ".", "(", ")", "$", "#", "+", ":", "...", " ", "")
 
 
-def get_value_from_df_column(df: pd.DataFrame, column_name: str) -> str:
-    value = df[column_name].iloc[0]
-    return value
-
 
 def weighted_rating(df: pd.DataFrame, m: int, c: float) -> float:
+    """
+    Calculate the weighted rating of a movie based on its vote count and average rating.
 
+    Args:
+    df (pd.DataFrame): DataFrame containing the data.
+    m (int): The minimum number of votes required to be considered.
+    c (float): The mean vote across the whole dataset.
+
+    Returns:
+    float: The weighted rating of the movie.
+    """
     v = df["vote_count"]
     r = df["vote_average"]
 
@@ -39,6 +45,16 @@ def weighted_rating(df: pd.DataFrame, m: int, c: float) -> float:
 
 
 def add_imdb_score(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create a pipeline that includes preprocessing and a KNN model.
+
+    Args:
+    df (pd.DataFrame): DataFrame containing the data.
+    params (dict): Parameters for the KNN model, including 'metric'.
+
+    Returns:
+    Pipeline: A scikit-learn Pipeline object with preprocessing and KNN model.
+    """
     m = 150
     c = df["vote_average"].mean()
     df["imdb_score"] = df.apply(lambda x: weighted_rating(x, m, c), axis=1)
@@ -46,6 +62,16 @@ def add_imdb_score(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_description_column(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create a pipeline that includes preprocessing and a KNN model.
+
+    Args:
+    df (pd.DataFrame): DataFrame containing the data.
+    params (dict): Parameters for the KNN model, including 'metric'.
+
+    Returns:
+    Pipeline: A scikit-learn Pipeline object with preprocessing and KNN model.
+    """
     df["tagline"] = df["tagline"].replace("", "Missing")
     df["overview"] = df["overview"].replace("", "Missing")
     df["description"] = df["overview"] + " " + df["tagline"]
@@ -53,6 +79,15 @@ def create_description_column(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def clean_data(x):
+    """
+    Clean the data by converting it to lowercase and removing spaces.
+
+    Args:
+    x (str): The data to be cleaned.
+
+    Returns:
+    str: The cleaned data.
+    """
     if isinstance(x, list):
         return [str.lower(i.replace(" ", "")) for i in x]
     else:
@@ -64,6 +99,15 @@ def clean_data(x):
 
 
 def create_mix(x):
+    """
+    Create a mixed column that includes the actors, keywords, directors, genres, and production company.
+
+    Args:
+    x (pd.DataFrame): DataFrame containing the data.
+
+    Returns:
+    str: A string containing the mixed information.
+    """
     return (
         "".join(x["keywords"])
         + " "
@@ -78,6 +122,15 @@ def create_mix(x):
 
 
 def create_mixed_column(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create a mixed column that includes the actors, keywords, directors, genres, and production company.
+
+    Args:
+    df (pd.DataFrame): DataFrame containing the data.
+
+    Returns:
+    pd.DataFrame: A DataFrame with a new column 'mixed' containing the mixed information.
+    """
     features = ["actors", "keywords", "directors", "genres", "production_company"]
 
     for feature in features:
@@ -87,6 +140,12 @@ def create_mixed_column(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def read_db() -> pd.DataFrame:
+    """
+    Read the database and return a DataFrame.
+
+    Returns:
+    pd.DataFrame: A DataFrame containing the data from the database.
+    """
     con = duckdb.connect("movies.db")
     df = con.table("movies").df()
     con.close()
@@ -94,6 +153,12 @@ def read_db() -> pd.DataFrame:
 
 
 def creatre_df() -> pd.DataFrame:
+    """
+    Create a DataFrame with the mixed column, the imdb score, and the vote average.
+
+    Returns:
+    pd.DataFrame: A DataFrame with the mixed column, the imdb score, and the vote average.
+    """
     # print("Current working directory:", os.getcwd())  # This will show the directory from which the script is run
 
     df = read_db()
@@ -106,39 +171,15 @@ def creatre_df() -> pd.DataFrame:
     return df
 
 
-def create_tifidf(df: pd.DataFrame) -> pd.DataFrame:
-    print("Creating TF-IDF matrix")
-    tfidf = TfidfVectorizer(stop_words=list(stop_words), lowercase=True)
-    tfidf_matrix = tfidf.fit_transform(df["description"])
-    tifidf_df = pd.DataFrame(
-        tfidf_matrix.toarray(), columns=tfidf.get_feature_names_out()
-    )
-    print("TF-IDF matrix created")
-    return tifidf_df
-
-
-def create_count(df: pd.DataFrame) -> pd.DataFrame:
-    print("Creating count matrix")
-    count_vectorizer = CountVectorizer(stop_words=list(stop_words), lowercase=True)
-    count_matrix = count_vectorizer.fit_transform(df["mixed"])
-    count_df = pd.DataFrame(
-        count_matrix.toarray(), columns=count_vectorizer.get_feature_names_out()
-    )
-    print("Count matrix created")
-    return count_df
-
-
-def create_standard_scaler(df: pd.DataFrame) -> pd.DataFrame:
-    print("Creating standard scaler")
-    scaler = StandardScaler()
-    numerical_columns = ["imdb_score", "vote_average"]
-    numerical_features = scaler.fit_transform(df[numerical_columns])
-    scaled_df = pd.DataFrame(numerical_features, columns=numerical_columns)
-    print("Standard scaler created")
-    return scaled_df
 
 
 def create_preprocessor() -> ColumnTransformer:
+    """
+    Create a preprocessor that includes TF-IDF and count vectorization.
+
+    Returns:
+    ColumnTransformer: A scikit-learn ColumnTransformer object with TF-IDF and count vectorization.
+    """
     columns_tfidf_to_encode = "description"
     columns_to_countvectorize = "mixed"
     columns_to_std = ["imdb_score", "vote_average"]
@@ -163,7 +204,16 @@ def create_preprocessor() -> ColumnTransformer:
 
 
 def create_pipeline_knn(df: pd.DataFrame,params: dict) -> Pipeline:
-    
+    """
+    Create a pipeline that includes preprocessing and a KNN model.
+
+    Args:
+    df (pd.DataFrame): DataFrame containing the data.
+    params (dict): Parameters for the KNN model, including 'metric'.
+
+    Returns:
+    Pipeline: A scikit-learn Pipeline object with preprocessing and KNN model.
+    """
     # Define the KNN model
     knn_model = NearestNeighbors(n_neighbors=11, algorithm="auto", metric=params['metric'])
     preprocessor = create_preprocessor()
@@ -218,6 +268,16 @@ def find_nearest_neighbors(
 
 
 def create_cosinus_matrix(df: pd.DataFrame, params: dict) -> np.ndarray:
+    """
+    Create a cosine similarity matrix.
+
+    Args:
+    df (pd.DataFrame): DataFrame containing movie data.
+    params (dict): Parameters for the KNN model, including 'metric'.
+
+    Returns:
+    np.ndarray: A numpy array containing the cosine similarity matrix.
+    """
     pipeline_with_knn = create_pipeline_knn(df, params)
     similarity_matrix = cosine_similarity(
         pipeline_with_knn.named_steps["preprocessor"].transform(df)
