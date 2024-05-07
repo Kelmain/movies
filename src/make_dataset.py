@@ -1,3 +1,6 @@
+"""
+This module is used for processing and inserting movie data into a DuckDB database.
+"""
 import os
 import duckdb
 from dotenv import load_dotenv
@@ -102,10 +105,3 @@ def insert_data(data: list, db_name: str = DB_NAME, table_name: str = TABLE_NAME
     con.commit()
     cur.close()
     con.close()
-
-if __name__ == "__main__":
-    test_data()
-
-
-
-

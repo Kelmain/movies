@@ -1,3 +1,6 @@
+"""
+This module handles the creation, modification, and deletion of tables in a DuckDB database using environment variables for configuration.
+"""
 import os
 import duckdb
 from dotenv import load_dotenv

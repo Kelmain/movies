@@ -1,9 +1,11 @@
+"""
+This module provides utility functions for data processing and machine learning tasks in a Streamlit application.
+It includes functions for database operations, data cleaning, feature engineering, and model pipeline creation.
+"""
 import os
 import duckdb
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from functools import cache
 from sklearn.pipeline import Pipeline
 from sklearn.neighbors import NearestNeighbors
 from sklearn.compose import ColumnTransformer
@@ -12,6 +14,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import nltk
+from nltk.stem import WordNetLemmatizer
 from dotenv import load_dotenv
 
 # Load the .env file
@@ -77,6 +80,7 @@ def create_description_column(df: pd.DataFrame) -> pd.DataFrame:
     df["tagline"] = df["tagline"].replace("", "Missing")
     df["overview"] = df["overview"].replace("", "Missing")
     df["description"] = df["overview"] + " " + df["tagline"]
+    df["description"] = df["description"].apply(lambda x: " ".join([WordNetLemmatizer().lemmatize(word) for word in x.split()]).lower())
     return df
 
 
@@ -134,10 +138,12 @@ def create_mixed_column(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame: A DataFrame with a new column 'mixed' containing the mixed information.
     """
     features = ["actors", "keywords", "directors", "genres", "production_company"]
-
+    
     for feature in features:
         df[feature] = df[feature].apply(clean_data)
+    df["keywords"] = df["keywords"].apply(lambda x: [WordNetLemmatizer().lemmatize(word) for word in x])
     df["mixed"] = df.apply(create_mix, axis=1)
+    
     return df
 
 
