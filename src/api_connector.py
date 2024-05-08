@@ -122,7 +122,7 @@ async def get_movie_data(session, movie_id: int) -> dict:
         async with session.get(url, headers=HEADERS, params=params) as response:
             if response.status == 429:
                 await asyncio.sleep(10)
-
+            await asyncio.sleep(2)
             data = response.json()
             return await data
 

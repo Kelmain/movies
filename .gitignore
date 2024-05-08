@@ -11,7 +11,7 @@ pyvenv.cfg
 pip-selfcheck.json
 
 # Environments
-.env
+#env
 .venv
 env/
 venv/
