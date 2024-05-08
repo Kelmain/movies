@@ -19,11 +19,12 @@ from dotenv import load_dotenv
 
 # Load the .env file
 load_dotenv()
-nltk.data.path.append(os.getenv("NLTK_PATH"))
+#nltk.data.path.append(os.getenv("NLTK_PATH"))
 from nltk.corpus import stopwords
 
-# nltk.download('stopwords')
-# nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('wordnet')
 stop_words = set(stopwords.words("french"))
 stop_words.update(",", ";", "!", "?", ".", "(", ")", "$", "#", "+", ":", "...", " ", "")
 
