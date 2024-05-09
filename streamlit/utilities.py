@@ -2,6 +2,7 @@
 This module provides utility functions for data processing and machine learning tasks in a Streamlit application.
 It includes functions for database operations, data cleaning, feature engineering, and model pipeline creation.
 """
+
 import os
 import duckdb
 import pandas as pd
@@ -19,12 +20,12 @@ from dotenv import load_dotenv
 
 # Load the .env file
 load_dotenv()
-#nltk.data.path.append(os.getenv("NLTK_PATH"))
+nltk.data.path.append(os.getenv("NLTK_PATH"))
 from nltk.corpus import stopwords
 
-nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('wordnet')
+# nltk.download('stopwords')
+# nltk.download('punkt')
+# nltk.download('wordnet')
 stop_words = set(stopwords.words("french"))
 stop_words.update(",", ";", "!", "?", ".", "(", ")", "$", "#", "+", ":", "...", " ", "")
 
@@ -32,154 +33,183 @@ TABLE_NAME = os.getenv("TABLE_NAME")
 DB_NAME = os.getenv("DB_NAME")
 
 
-def weighted_rating(df: pd.DataFrame, m: int, c: float) -> float:
+def add_imdb_score_db(table_name: str):
     """
-    Calculate the weighted rating of a movie based on its vote count and average rating.
+    Add an IMDb score column to the database table based on the weighted rating formula.
 
     Args:
-    df (pd.DataFrame): DataFrame containing the data.
-    m (int): The minimum number of votes required to be considered.
-    c (float): The mean vote across the whole dataset.
-
-    Returns:
-    float: The weighted rating of the movie.
-    """
-    v = df["vote_count"]
-    r = df["vote_average"]
-
-    return (v / (v + m)) * r + (m / (v + m)) * c
-
-
-def add_imdb_score(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Create a pipeline that includes preprocessing and a KNN model.
-
-    Args:
-    df (pd.DataFrame): DataFrame containing the data.
-    params (dict): Parameters for the KNN model, including 'metric'.
-
-    Returns:
-    Pipeline: A scikit-learn Pipeline object with preprocessing and KNN model.
-    """
-    m = 150
-    c = df["vote_average"].mean()
-    df["imdb_score"] = df.apply(lambda x: weighted_rating(x, m, c), axis=1)
-    return df
-
-
-def create_description_column(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Create a pipeline that includes preprocessing and a KNN model.
-
-    Args:
-    df (pd.DataFrame): DataFrame containing the data.
-    params (dict): Parameters for the KNN model, including 'metric'.
-
-    Returns:
-    Pipeline: A scikit-learn Pipeline object with preprocessing and KNN model.
-    """
-    df["tagline"] = df["tagline"].replace("", "Missing")
-    df["overview"] = df["overview"].replace("", "Missing")
-    df["description"] = df["overview"] + " " + df["tagline"]
-    df["description"] = df["description"].apply(lambda x: " ".join([WordNetLemmatizer().lemmatize(word) for word in x.split()]).lower())
-    return df
-
-
-def clean_data(x):
-    """
-    Clean the data by converting it to lowercase and removing spaces.
-
-    Args:
-    x (str): The data to be cleaned.
-
-    Returns:
-    str: The cleaned data.
-    """
-    if isinstance(x, list):
-        return [str.lower(i.replace(" ", "")) for i in x]
-    else:
-        # Check if director exists. If not, return empty string
-        if isinstance(x, str):
-            return str.lower(x.replace(" ", ""))
-        else:
-            return ""
-
-
-def create_mix(x):
-    """
-    Create a mixed column that includes the actors, keywords, directors, genres, and production company.
-
-    Args:
-    x (pd.DataFrame): DataFrame containing the data.
-
-    Returns:
-    str: A string containing the mixed information.
-    """
-    return (
-        "".join(x["keywords"])
-        + " "
-        + "".join(x["actors"])
-        + " "
-        + x["directors"]
-        + " "
-        + "".join(x["genres"])
-        + " "
-        + "".join(x["production_company"])
-    )
-
-
-def create_mixed_column(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Create a mixed column that includes the actors, keywords, directors, genres, and production company.
-
-    Args:
-    df (pd.DataFrame): DataFrame containing the data.
-
-    Returns:
-    pd.DataFrame: A DataFrame with a new column 'mixed' containing the mixed information.
-    """
-    features = ["actors", "keywords", "directors", "genres", "production_company"]
-    
-    for feature in features:
-        df[feature] = df[feature].apply(clean_data)
-    df["keywords"] = df["keywords"].apply(lambda x: [WordNetLemmatizer().lemmatize(word) for word in x])
-    df["mixed"] = df.apply(create_mix, axis=1)
-    
-    return df
-
-
-def read_db() -> pd.DataFrame:
-    """
-    Read the database and return a DataFrame.
-
-    Returns:
-    pd.DataFrame: A DataFrame containing the data from the database.
+    table_name (str): The name of the table in the database to update.
     """
     con = duckdb.connect(DB_NAME)
-    df = con.table(TABLE_NAME).df()
-    con.close()
-    return df
+    try:
+        # Calculate the mean vote average across the dataset
+        c = con.execute(f"SELECT AVG(vote_average) FROM {table_name}").fetchone()[0]
+        m = 150  # The minimum number of votes required to be considered
+
+        # Add the IMDb score column
+        con.execute(
+            f"""
+            ALTER TABLE {table_name} ADD COLUMN imdb_score DOUBLE;
+        """
+        )
+        con.execute(
+            f"""
+            UPDATE {table_name}
+            SET imdb_score = (vote_count / (vote_count + {m})) * vote_average + ({m} / (vote_count + {m})) * {c}
+        """
+        )
+
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        con.close()
 
 
-def creatre_df() -> pd.DataFrame:
+def create_mixed_column_db(table_name: str):
     """
-    Create a DataFrame with the mixed column, the imdb score, and the vote average.
+    Create a mixed column in the database table that includes the actors, keywords, directors, genres, and production company.
+
+    Args:
+    table_name (str): The name of the table in the database to update.
+    """
+    con = duckdb.connect(DB_NAME)
+    try:
+        # Clean data and remove spaces, convert to lowercase
+        con.execute(
+            f"""
+            UPDATE {table_name}
+            SET actors = LOWER(REPLACE(actors, ' ', '')),
+                keywords = LOWER(REPLACE(keywords, ' ', '')),
+                directors = LOWER(REPLACE(directors, ' ', '')),
+                genres = LOWER(REPLACE(genres, ' ', '')),
+                production_company = LOWER(REPLACE(production_company, ' ', ''))
+        """
+        )
+
+        # Combine columns into a new 'mixed' column
+        con.execute(
+            f"""
+            ALTER TABLE {table_name} ADD COLUMN mixed VARCHAR;
+        """
+        )
+        con.execute(
+            f"""
+            UPDATE {table_name}
+            SET mixed = keywords || ' ' || actors || ' ' || directors || ' ' || genres || ' ' || production_company;
+        """
+        )
+
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        con.close()
+
+
+def create_description_column_db(table_name: str):
+    """
+    Update the database table to include a 'description' column by combining 'tagline' and 'overview',
+    and applying text processing using SQL in duckdb.
+
+    Args:
+    table_name (str): The name of the table in the database to update.
+
+    """
+    con = duckdb.connect(DB_NAME)
+    try:
+        # Replace empty taglines and overviews with 'Missing'
+        con.execute(
+            f"""
+            UPDATE {table_name}
+            SET tagline = 'Missing'
+            WHERE tagline = '';
+        """
+        )
+        con.execute(
+            f"""
+            UPDATE {table_name}
+            SET overview = 'Missing'
+            WHERE overview = '';
+        """
+        )
+
+        # Add a new column 'description' that combines 'overview' and 'tagline'
+        con.execute(
+            f"""
+            ALTER TABLE {table_name} ADD COLUMN description VARCHAR;
+        """
+        )
+        con.execute(
+            f"""
+            UPDATE {table_name}
+            SET description = LOWER(overview || ' ' || tagline);
+        """
+        )
+
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        con.close()
+
+
+def lemmatize_text(text):
+    """
+    Lemmatize the input text using NLTK's WordNetLemmatizer.
+
+    Args:
+    text (str): The text to lemmatize.
 
     Returns:
-    pd.DataFrame: A DataFrame with the mixed column, the imdb score, and the vote average.
+    str: The lemmatized text.
     """
-    # print("Current working directory:", os.getcwd())  # This will show the directory from which the script is run
+    if text is None:
+        return None
+    lemmatizer = WordNetLemmatizer()
+    lemmatized_words = [lemmatizer.lemmatize(word) for word in text.split()]
+    return " ".join(lemmatized_words).lower()
 
-    df = read_db()
-    df = create_mixed_column(df)
-    df = add_imdb_score(df)
-    df = create_description_column(df)
+def update_text_columns_with_lemmatization(table_name: str):
+    """
+    Update the 'keywords' and 'description' columns in the database table using the lemmatize_text UDF.
 
-    # Save the DataFrame to a Parquet file
-    df.to_parquet("streamlit/data/movies.parquet")
-    return df
+    Args:
+    table_name (str): The name of the table to update.
+    """
+    con = duckdb.connect(DB_NAME)
+    try:
+        # Update the 'keywords' column using the lemmatize_text UDF
+        con.execute(f"""
+            UPDATE {table_name}
+            SET keywords = lemmatize_text(keywords),
+                description = lemmatize_text(description);
+        """)
 
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        con.close()
 
+def add_ml_columns_db():
+    """
+    Add the 'description' and 'mixed' columns to the database table using the lemmatize_text UDF.
+    """
+    # Connect to DuckDB
+    con = duckdb.connect(DB_NAME)
+
+    # Register the UDF
+    con.create_function(
+        "lemmatize_text", lemmatize_text, parameters=["varchar"], return_type="varchar"
+    )
+    # create description column
+    create_description_column_db(TABLE_NAME)
+    update_text_columns_with_lemmatization(TABLE_NAME)
+    # create mixed column
+    create_mixed_column_db(TABLE_NAME)
+    # create imdb score column
+    add_imdb_score_db(TABLE_NAME)
+
+    show = con.sql(f"SELECT * FROM {TABLE_NAME}")
+    print(show)
+    con.close()
 
 
 def create_preprocessor() -> ColumnTransformer:
@@ -212,7 +242,7 @@ def create_preprocessor() -> ColumnTransformer:
     return preprocessor
 
 
-def create_pipeline_knn(df: pd.DataFrame,params: dict) -> Pipeline:
+def create_pipeline_knn(df: pd.DataFrame, params: dict) -> Pipeline:
     """
     Create a pipeline that includes preprocessing and a KNN model.
 
@@ -224,7 +254,9 @@ def create_pipeline_knn(df: pd.DataFrame,params: dict) -> Pipeline:
     Pipeline: A scikit-learn Pipeline object with preprocessing and KNN model.
     """
     # Define the KNN model
-    knn_model = NearestNeighbors(n_neighbors=11, algorithm="auto", metric=params['metric'])
+    knn_model = NearestNeighbors(
+        n_neighbors=11, algorithm="auto", metric=params["metric"]
+    )
     preprocessor = create_preprocessor()
     # Combine preprocessing and KNN model using Pipeline
     pipeline_with_knn = Pipeline(
@@ -234,9 +266,7 @@ def create_pipeline_knn(df: pd.DataFrame,params: dict) -> Pipeline:
     return pipeline_with_knn
 
 
-def find_nearest_neighbors(
-    id: int, movies: pd.DataFrame, params: dict
-) -> list:
+def find_nearest_neighbors(movie_id: int, movies: pd.DataFrame, params: dict) -> list:
     """
     Find and return the nearest neighbors of a given movie ID using a pre-trained KNN pipeline.
 
@@ -251,7 +281,7 @@ def find_nearest_neighbors(
     df = movies[["mixed", "imdb_score", "vote_average", "id", "description"]]
     pipeline_with_knn = create_pipeline_knn(movies, params)
     # Filter the DataFrame to get the features of the specified movie
-    query_product_features = df[df["id"] == id].drop(columns=["id"])
+    query_product_features = df[df["id"] == movie_id].drop(columns=["id"])
     # Use the pipeline to preprocess the query movie features
     query_product_features_processed = pipeline_with_knn.named_steps[
         "preprocessor"
@@ -259,7 +289,7 @@ def find_nearest_neighbors(
 
     # Use the KNN model to find the nearest neighbors for the query movie
     nearest_neighbors_indices = pipeline_with_knn.named_steps["knn"].kneighbors(
-        query_product_features_processed, return_distance=False 
+        query_product_features_processed, return_distance=False
     )[0]
 
     # Get the nearest neighbors' Movie IDs
@@ -270,7 +300,7 @@ def find_nearest_neighbors(
 
     # Exclude the query movie itself from the results and convert to a list of dictionaries
     nearest_neighbors_list = nearest_neighbors_df[
-        nearest_neighbors_df["id"] != id
+        nearest_neighbors_df["id"] != movie_id
     ].to_dict(orient="records")
 
     return nearest_neighbors_list
@@ -294,20 +324,12 @@ def create_cosinus_matrix(df: pd.DataFrame, params: dict) -> np.ndarray:
     return similarity_matrix
 
 
-def get_recommendations(df: pd.DataFrame, id: int, params: dict) -> list:
+def get_recommendations(df: pd.DataFrame, movie_id: int, params: dict) -> list:
     """
     Get recommendations based on a movie ID and a precomputed cosine similarity matrix.
-
-    Args:
-    df (pd.DataFrame): DataFrame containing movie data.
-    id (int): The ID of the movie for which recommendations are sought.
-    cosine_sim (np.ndarray): Precomputed cosine similarity matrix.
-
-    Returns:
-    list: A list of dictionaries, each containing all the information of the top 10 most similar movies.
     """
-    # Get the index of the movie that matches the ID
-    idx = df.index[df["id"] == id][0]
+    # Get the index of the movie that matches the movie_id
+    idx = df.index[df["id"] == movie_id][0]
     cosine_sim = create_cosinus_matrix(df, params)
     # Get the pairwise similarity scores of all movies with that movie
     sim_scores = list(enumerate(cosine_sim[idx]))
@@ -326,4 +348,4 @@ def get_recommendations(df: pd.DataFrame, id: int, params: dict) -> list:
 
 
 if __name__ == "__main__":
-    creatre_df()
+    add_ml_columns_db()

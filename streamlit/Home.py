@@ -1,5 +1,4 @@
-import os
-import sys
+import duckdb
 import warnings
 import pandas as pd
 from utilities import (
@@ -9,6 +8,13 @@ from utilities import (
 from streamlit_searchbox import st_searchbox
 from streamlit_carousel import carousel
 import streamlit as st
+from dotenv import load_dotenv
+
+# Load the .env file
+load_dotenv()
+
+TABLE_NAME = os.getenv("TABLE_NAME")
+DB_NAME = os.getenv("DB_NAME")
 
 warnings.filterwarnings("ignore")
 
@@ -35,7 +41,9 @@ def load_data():
     """
     Load the movies data
     """
-    data = pd.read_parquet("data/movies.parquet")
+    con = duckdb.connect(DB_NAME)
+    data = con.table(TABLE_NAME).df()
+    con.close()
     return data
 
 
