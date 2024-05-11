@@ -70,7 +70,7 @@ class MovieData:
 
 def insert_data(data: list, db_name: str = DB_NAME, table_name: str = TABLE_NAME) -> None:
     """
-    Inserts a list of movie data into the specified database and table.
+    Inserts a list of movie data into the specified database and table using batch insertion for improved performance.
 
     Args:
     data (list): A list of dictionaries, each representing movie data.
@@ -80,6 +80,11 @@ def insert_data(data: list, db_name: str = DB_NAME, table_name: str = TABLE_NAME
     con = duckdb.connect(db_name)
     cur = con.cursor()
     try:
+        # Prepare the SQL statement for batch insertion
+        sql = f"INSERT OR REPLACE INTO {table_name} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        
+        # Collect all rows to be inserted
+        rows_to_insert = []
         for item in data:
             if item.get("id") is None:
                 print("Skipping item due to missing ID:", item)
@@ -92,16 +97,18 @@ def insert_data(data: list, db_name: str = DB_NAME, table_name: str = TABLE_NAME
                 movie_data.runtime, movie_data.status, movie_data.tagline, movie_data.title, movie_data.vote_average,
                 movie_data.vote_count, movie_data.genre_name, movie_data.actors, movie_data.actors_id,
                 movie_data.directors, movie_data.directors_id, movie_data.video_name, movie_data.video_key,
-                movie_data.keywords,movie_data.production_company,
+                movie_data.keywords, movie_data.production_company,
             )
-            cur.execute(
-                f"INSERT OR REPLACE INTO {table_name} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                values,
-            )
+            rows_to_insert.append(values)
+
+        # Execute batch insert
+        cur.executemany(sql, rows_to_insert)
+
     except duckdb.Error as db_err:
         print(f"Database error: {db_err}")
     except ValueError as val_err:
         print(f"Value error: {val_err}")
-    con.commit()
-    cur.close()
-    con.close()
+    finally:
+        con.commit()
+        cur.close()
+        con.close()

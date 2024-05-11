@@ -35,22 +35,9 @@ st.title(":film_projector: Movie Recommendation")
 
 classifier_name = st.sidebar.selectbox("Select classifier", ("KNN", "Cosinus"), index=1)
 
-
-
-@st.cache_data
-def load_data():
-    """
-    Load the movies data
-    """
-    data = get_movies_db()
-    st.write(data)
-    return data
-
-
 # Create a text element and let the reader know the data is loading.
 data_load_state = st.text("Loading data...")
 df = get_movies_db()
-st.write(df)
 # Notify the reader that the data was successfully loaded.
 data_load_state.text("Loading data...done!")
 

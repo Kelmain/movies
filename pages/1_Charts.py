@@ -1,10 +1,23 @@
+import os
+import warnings
 import streamlit as st
 import pandas as pd
-import warnings
 import matplotlib.pyplot as plt
 import seaborn as sns
 from wordcloud import WordCloud
 import nltk
+from dotenv import load_dotenv
+from utilities import (
+    get_movies_db,
+)
+
+
+
+# Load the .env file
+load_dotenv()
+
+TABLE_NAME = os.getenv("TABLE_NAME")
+DB_NAME = os.getenv("DB_NAME")
 
 nltk.data.path.append(
     r"c:\Users\Work\Desktop\projects\project2\project2-movie-env\Lib\site-packages\nltk"
@@ -23,16 +36,11 @@ st.markdown(
 
 st.title(":bar_chart: Charts")
 
-@st.cache_data
-def load_data():
-    data = pd.read_parquet("data/movies.parquet")
-    return data
-
-
 # Create a text element and let the reader know the data is loading.
 data_load_state = st.text("Loading data...")
 # Load 10,000 rows of data into the dataframe.
-df = load_data()
+df = get_movies_db()
+st.write(df)
 movies2 = df[
     [
         "title",

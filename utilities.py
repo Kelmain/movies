@@ -29,17 +29,22 @@ from nltk.corpus import stopwords
 # nltk.download('punkt')
 # nltk.download('wordnet')
 stop_words = set(stopwords.words("french"))
-stop_words.update(",", ";", "!", "?", ".", "(", ")", "$", "#", "+", ":", "...", " ", "")
+stop_words.update(",", ";", "!", "?", ".", "(", ")", "$", "#", "+", ":", "...", "Unknown", "Missing")
 
 TABLE_NAME = os.getenv("TABLE_NAME")
 DB_NAME = os.getenv("DB_NAME")
 
-def get_movies_db():
+@cache
+def get_movies_db()-> pd.DataFrame:
+    """
+    Get the movies data from the database.
+
+    Returns:
+    pd.DataFrame: A pandas DataFrame containing the movies data.
+    """
     con = duckdb.connect(DB_NAME)
-    print("in get_movies_db")
     try:
         movies = con.table(TABLE_NAME).df()
-        print(movies)
         return movies
     except Exception as e:
         print(f"Error: {e}")
@@ -87,29 +92,23 @@ def create_mixed_column_db(table_name: str):
     """
     con = duckdb.connect(DB_NAME)
     try:
-        # Clean data and remove spaces, convert to lowercase
-        con.execute(
-            f"""
-            UPDATE {table_name}
-            SET actors = LOWER(REPLACE(actors, ' ', '')),
-                keywords = LOWER(REPLACE(keywords, ' ', '')),
-                directors = LOWER(REPLACE(directors, ' ', '')),
-                genres = LOWER(REPLACE(genres, ' ', '')),
-                production_company = LOWER(REPLACE(production_company, ' ', ''))
-        """
-        )
-
-        # Combine columns into a new 'mixed' column
+        # Add a new 'mixed' column
         con.execute(
             f"""
             ALTER TABLE {table_name} ADD COLUMN mixed VARCHAR;
-        """
+            """
         )
+
+        # Populate the 'mixed' column with cleaned and combined data
         con.execute(
             f"""
             UPDATE {table_name}
-            SET mixed = keywords || ' ' || actors || ' ' || directors || ' ' || genres || ' ' || production_company;
-        """
+            SET mixed = LOWER(REPLACE(keywords, ' ', '') || ' ' || 
+                             REPLACE(actors, ' ', '') || ' ' || 
+                             REPLACE(directors, ' ', '') || ' ' || 
+                             REPLACE(genres, ' ', '') || ' ' || 
+                             REPLACE(production_company, ' ', ''))
+            """
         )
 
     except Exception as e:

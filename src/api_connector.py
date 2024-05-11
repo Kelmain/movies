@@ -1,8 +1,6 @@
 import os
 import sys
-import json
 from datetime import datetime, timedelta
-from functools import cache
 import asyncio
 import aiohttp
 from dotenv import load_dotenv
@@ -72,7 +70,7 @@ async def fetch_page(session, page_count: int) -> dict:
         print(f"Error: {e}")
         return {}
 
-@cache
+
 async def get_movie_ids(session) -> list:
     """
     Fetches movie IDs for the specified page.
@@ -99,7 +97,7 @@ async def get_movie_ids(session) -> list:
     print(len(movies_id))
     return list(movies_id)
 
-@cache
+
 async def get_movie_data(session, movie_id: int) -> dict:
     """
     Fetches detailed movie data including credits, videos, and keywords for a given movie ID.
@@ -122,7 +120,9 @@ async def get_movie_data(session, movie_id: int) -> dict:
         async with session.get(url, headers=HEADERS, params=params) as response:
             if response.status == 429:
                 await asyncio.sleep(10)
-            await asyncio.sleep(2)
+            elif response.status_code == 25:
+                await asyncio.sleep(10)
+            await asyncio.sleep(5)
             data = response.json()
             return await data
 
