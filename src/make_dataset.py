@@ -95,7 +95,7 @@ def insert_data(data: list, db_name: str = DB_NAME, table_name: str = TABLE_NAME
                 movie_data.keywords,movie_data.production_company,
             )
             cur.execute(
-                f"INSERT INTO {table_name} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                f"INSERT OR REPLACE INTO {table_name} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 values,
             )
     except duckdb.Error as db_err:

@@ -15,8 +15,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import nltk
-from nltk.stem import WordNetLemmatizer
+from nltk.stem import SnowballStemmer
 from dotenv import load_dotenv
+from functools import cache
+
 
 # Load the .env file
 load_dotenv()
@@ -32,6 +34,17 @@ stop_words.update(",", ";", "!", "?", ".", "(", ")", "$", "#", "+", ":", "...", 
 TABLE_NAME = os.getenv("TABLE_NAME")
 DB_NAME = os.getenv("DB_NAME")
 
+def get_movies_db():
+    con = duckdb.connect(DB_NAME)
+    print("in get_movies_db")
+    try:
+        movies = con.table(TABLE_NAME).df()
+        print(movies)
+        return movies
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        con.close()
 
 def add_imdb_score_db(table_name: str):
     """
@@ -151,36 +164,37 @@ def create_description_column_db(table_name: str):
         con.close()
 
 
-def lemmatize_text(text):
+
+def stem_text(text):
     """
-    Lemmatize the input text using NLTK's WordNetLemmatizer.
+    Stem the input text using NLTK's SnowballStemmer.
 
     Args:
-    text (str): The text to lemmatize.
+    text (str): The text to stem.
 
     Returns:
-    str: The lemmatized text.
+    str: The stemmed text.
     """
     if text is None:
         return None
-    lemmatizer = WordNetLemmatizer()
-    lemmatized_words = [lemmatizer.lemmatize(word) for word in text.split()]
-    return " ".join(lemmatized_words).lower()
+    stemmer = SnowballStemmer("french")  # Assuming the text is in English
+    stemmed_words = [stemmer.stem(word) for word in text.split()]
+    return " ".join(stemmed_words).lower()
 
-def update_text_columns_with_lemmatization(table_name: str):
+def update_text_columns_with_stemming(table_name: str):
     """
-    Update the 'keywords' and 'description' columns in the database table using the lemmatize_text UDF.
+    Update the 'keywords' and 'description' columns in the database table using the stem_text UDF.
 
     Args:
     table_name (str): The name of the table to update.
     """
     con = duckdb.connect(DB_NAME)
     try:
-        # Update the 'keywords' column using the lemmatize_text UDF
+        # Update the 'keywords' and 'description' columns using the stem_text UDF
         con.execute(f"""
             UPDATE {table_name}
-            SET keywords = lemmatize_text(keywords),
-                description = lemmatize_text(description);
+            SET keywords = stem_text(keywords),
+                description = stem_text(description);
         """)
 
     except Exception as e:
@@ -197,11 +211,11 @@ def add_ml_columns_db():
 
     # Register the UDF
     con.create_function(
-        "lemmatize_text", lemmatize_text, parameters=["varchar"], return_type="varchar"
+        "stem_text", stem_text, parameters=["varchar"], return_type="varchar"
     )
     # create description column
     create_description_column_db(TABLE_NAME)
-    update_text_columns_with_lemmatization(TABLE_NAME)
+    update_text_columns_with_stemming(TABLE_NAME)
     # create mixed column
     create_mixed_column_db(TABLE_NAME)
     # create imdb score column

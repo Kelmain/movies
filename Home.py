@@ -1,14 +1,17 @@
-import duckdb
+import os
 import warnings
+import duckdb
 import pandas as pd
 from utilities import (
     get_recommendations,
     find_nearest_neighbors,
+    get_movies_db,
 )
 from streamlit_searchbox import st_searchbox
 from streamlit_carousel import carousel
-import streamlit as st
 from dotenv import load_dotenv
+import streamlit as st
+
 
 # Load the .env file
 load_dotenv()
@@ -30,30 +33,29 @@ st.markdown(
 
 st.title(":film_projector: Movie Recommendation")
 
-classifier_name = st.sidebar.selectbox(
-    'Select classifier',
-    ('KNN', 'Cosinus'),
-    index=1
-)
+classifier_name = st.sidebar.selectbox("Select classifier", ("KNN", "Cosinus"), index=1)
+
+
 
 @st.cache_data
 def load_data():
     """
     Load the movies data
     """
-    con = duckdb.connect(DB_NAME)
-    data = con.table(TABLE_NAME).df()
-    con.close()
+    data = get_movies_db()
+    st.write(data)
     return data
 
 
 # Create a text element and let the reader know the data is loading.
 data_load_state = st.text("Loading data...")
-df = load_data()
+df = get_movies_db()
+st.write(df)
 # Notify the reader that the data was successfully loaded.
 data_load_state.text("Loading data...done!")
 
 movies_dict = df.set_index("title")["id"].to_dict()
+
 
 def create_carousel(recom_dict: list) -> list:
     """
@@ -73,7 +75,6 @@ def create_carousel(recom_dict: list) -> list:
     return carousel_liste
 
 
-
 def search_movies(search_term, movies_dict):
     """
     Search for movies that contain the given search term and limit the results to 5.
@@ -90,7 +91,7 @@ def search_movies(search_term, movies_dict):
 with st.container():
     coll, colm, colr = st.columns((1, 2, 1))
     with coll:
-        ""
+        """"""
     with colm:
         selected_movie_title = st_searchbox(
             label="Select movies",
@@ -101,14 +102,14 @@ with st.container():
             clear_on_submit=True,
         )
     with colr:
-        ""
+        """"""
 if selected_movie_title:
-    
+
     selected_movie_id = movies_dict.get(selected_movie_title)
     if selected_movie_id:
         selected_movie = df[df["id"] == selected_movie_id].iloc[0]
         if not selected_movie.empty:
-            
+
             st.markdown(
                 f"<h2 style='text-align: center; color: white;'>{selected_movie['title']}</h2>",
                 unsafe_allow_html=True,
@@ -147,6 +148,7 @@ if selected_movie_title:
 else:
     st.subheader("No movie selected or movie not found")
 
+
 def add_parameter_ui(classifier_name):
     """
     Add a selectbox to the sidebar to select the metric for the KNN model.
@@ -158,33 +160,36 @@ def add_parameter_ui(classifier_name):
     dict: A dictionary with the metric selected by the user.
     """
     params = dict()
-    if classifier_name == 'KNN':
-        metric = st.sidebar.selectbox('Select metric', ('minkowski','cosine', 'euclidean', 'manhattan', 'l1', 'l2', 'cityblock'))
-        params['metric'] = metric
-    elif classifier_name == 'Cosinus':
-        metric = 'minkowski'
-        params['metric'] = metric
+    if classifier_name == "KNN":
+        metric = st.sidebar.selectbox(
+            "Select metric",
+            ("minkowski", "cosine", "euclidean", "manhattan", "l1", "l2", "cityblock"),
+        )
+        params["metric"] = metric
+    elif classifier_name == "Cosinus":
+        metric = "minkowski"
+        params["metric"] = metric
     return params
+
 
 if selected_movie_title:
     params = add_parameter_ui(classifier_name)
-    cosinus_dict = get_recommendations(df,selected_movie_id, params )
-    
+    cosinus_dict = get_recommendations(df, selected_movie_id, params)
+
     knn_dict = find_nearest_neighbors(selected_movie_id, df, params)
     cosinus_carousel = create_carousel(cosinus_dict)
     knn_carousel = create_carousel(knn_dict)
 
     # Display the carousel based on the classifier selected
-    if classifier_name == 'Cosinus':
+    if classifier_name == "Cosinus":
         st.markdown(
-                f"<h2 style='text-align: center; color: white;'>Cosinus Model</h2>",
-                unsafe_allow_html=True,
-            )
+            f"<h2 style='text-align: center; color: white;'>Cosinus Model</h2>",
+            unsafe_allow_html=True,
+        )
         carousel(items=cosinus_carousel, width=0.5)
-    elif classifier_name == 'KNN':
+    elif classifier_name == "KNN":
         st.markdown(
-                f"<h2 style='text-align: center; color: white;'>KNN Model</h2>",
-                unsafe_allow_html=True,
-            )
+            f"<h2 style='text-align: center; color: white;'>KNN Model</h2>",
+            unsafe_allow_html=True,
+        )
         carousel(items=knn_carousel, width=0.5)
-
