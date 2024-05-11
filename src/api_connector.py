@@ -113,22 +113,22 @@ async def get_movie_data(session, movie_id: int) -> dict:
     - aiohttp.ClientError: If an error occurs during the HTTP request.
     """
     params = {"language": LANGUAGE, "append_to_response": "credits,videos,keywords"}
-
     url = f"{URL_DETAILS_MOVIE}{movie_id}"
 
     try:
         async with session.get(url, headers=HEADERS, params=params) as response:
-            if response.status == 429:
-                await asyncio.sleep(10)
-            elif response.status_code == 25:
-                await asyncio.sleep(10)
-            await asyncio.sleep(5)
-            data = response.json()
-            return await data
+            if response.status == 429 :
+                retry_after = int(response.headers.get("Retry-After", 10))
+                await asyncio.sleep(retry_after)
+                return await get_movie_data(session, movie_id)  # Recursive retry
+            response.raise_for_status()  # Will raise an error for 4XX/5XX status codes
+            return await response.json()
 
     except aiohttp.ClientError as e:
-        print(f"Error: {e}")
-        return {}
+        print(f"HTTP client error: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    return {}
 
 
 async def main():

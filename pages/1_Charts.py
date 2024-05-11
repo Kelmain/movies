@@ -40,7 +40,7 @@ st.title(":bar_chart: Charts")
 data_load_state = st.text("Loading data...")
 # Load 10,000 rows of data into the dataframe.
 df = get_movies_db()
-st.write(df)
+
 movies2 = df[
     [
         "title",
