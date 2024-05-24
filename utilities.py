@@ -15,6 +15,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import nltk
+import skops.io as sio
 from nltk.stem import SnowballStemmer
 from dotenv import load_dotenv
 from functools import cache
@@ -192,8 +193,7 @@ def update_text_columns_with_stemming(table_name: str):
         # Update the 'keywords' and 'description' columns using the stem_text UDF
         con.execute(f"""
             UPDATE {table_name}
-            SET keywords = stem_text(keywords),
-                description = stem_text(description);
+            SET keywords = stem_text(keywords);
         """)
 
     except Exception as e:
@@ -276,6 +276,7 @@ def create_pipeline_knn(df: pd.DataFrame, params: dict) -> Pipeline:
         steps=[("preprocessor", preprocessor), ("knn", knn_model)]
     )
     pipeline_with_knn.fit(df)
+    sio.dump(pipeline_with_knn, f"pipeline_{params["metric"]}.skops")
     return pipeline_with_knn
 
 
