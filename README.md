@@ -28,8 +28,12 @@ The api_conn.py file contains the functions to connect to the API and download t
 The make_dataset.py file contains the functions to clean the data and load it into the database.
 
 
-Replace `<script_name>` with the name of the script you wish to run. These scripts are used to perform data cleaning and analysis tasks on the movie datasets.
+## Stack
 
+- **Python**: The project is written in Python.
+- **Streamlit**: The project is built with Streamlit.
+- **DuckDB**: The project uses DuckDB as the database.
+- **ML**: The project uses ML to make the recommendations.
 
 
 ## Contributing
